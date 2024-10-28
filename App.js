@@ -1,82 +1,76 @@
-import {ImageBackground, StyleSheet, SafeAreaView} from 'react-native';
-import StartGamesScreen from "./screens/StartGamesScreen";
-import {LinearGradient} from "expo-linear-gradient";
-import React, {useState, useCallback} from "react";
-import GameScreen from "./screens/GameScreen";
-import colors from "./helpers/colors";
-import GameOverScreen from "./screens/GameOverScreen";
-import {useFonts} from "expo-font"
-import * as SplashScreen from 'expo-splash-screen';
-import {StatusBar} from "expo-status-bar";
+import React from 'react';
+import {StatusBar, StyleSheet} from "react-native";
+import {NavigationContainer} from "@react-navigation/native"
+import {createNativeStackNavigator} from "@react-navigation/native-stack"
+import {createDrawerNavigator} from "@react-navigation/drawer";
+import {Ionicons} from "@expo/vector-icons"
+
+import CategoriesScreen from "./screens/CategoriesScreen";
+import MealsOverviewScreen from "./screens/MealsOverviewScreen";
+import MealDetailsScreen from "./screens/MealDetailsScreen";
+import FavoritesScreen from "./screens/FavoritesScreen";
+import FavoritesContextProvider from "./store/context/favorites-context";
+
+import {COLORS} from "./assets/constants/constants";
 
 
-SplashScreen.preventAutoHideAsync();
+const Stack = createNativeStackNavigator();
+const Drawer = createDrawerNavigator();
 
-export default function App() {
-    const [userNumber, setUserNumber] = useState(null)
-    const [roundsNumber, setRoundsNumber] = useState(0)
-    const [isGameOver, setGameOver] = useState(false);
+function DrawerNavigator() {
+    return <Drawer.Navigator screenOptions={{
+        headerStyle: {backgroundColor: COLORS.BROWN},
+        headerTintColor: COLORS.WHITE,
+        sceneContainerStyle: {backgroundColor: COLORS.WALNUT},
+        drawerContentStyle: {backgroundColor: COLORS.BROWN},
+        drawerInactiveTintColor: COLORS.WHITE,
+        drawerActiveTintColor: COLORS.WALNUT,
+        drawerActiveBackgroundColor: COLORS.CASHMERE,
+    }}>
+        <Drawer.Screen name="Categories" component={CategoriesScreen} options={{
+            title: "All Categories",
+            drawerIcon: ({color, size}) => <Ionicons color={color} size={size} name="list"/>
+        }}/>
+        <Drawer.Screen name="Favorites" component={FavoritesScreen} options={{
+            title: "Favorites",
+            drawerIcon: ({color, size}) => <Ionicons color={color} size={size} name="heart"/>
+        }}/>
+    </Drawer.Navigator>
+}
 
-    const [isFontsLoading] = useFonts({
-        'open-sans': require('./assets/fonts/OpenSans-Regular.ttf'),
-        'open-sans-bold': require('./assets/fonts/OpenSans-Bold.ttf')
-    })
-
-    const onLayoutRootView = useCallback(async () => {
-        if (isFontsLoading) {
-            await SplashScreen.hideAsync();
-        }
-    }, [isFontsLoading]);
-
-    if (!isFontsLoading) {
-        return null;
-    }
-
-    function handleNumberInput(pickedNumber) {
-        setUserNumber(pickedNumber)
-        setGameOver(false)
-    }
-
-    function startNewGame() {
-        setUserNumber(null)
-        setRoundsNumber(0)
-        setGameOver(false)
-    }
-
-    let screen = <StartGamesScreen onConfirmNumber={handleNumberInput}/>
-
-    if (userNumber) {
-        screen = <GameScreen userNumber={userNumber} setGameOver={setGameOver} setRoundsNumber={setRoundsNumber}/>
-    }
-
-    if (isGameOver) {
-        screen = <GameOverScreen userNumber={userNumber} roundsNumber={roundsNumber} onClick={startNewGame}/>
-    }
-
-
+export default function App(props) {
     return (
         <>
-            <StatusBar style="light"/>
-            <LinearGradient colors={[colors.primary800, colors.secondary500]} style={styles.rootScreen}
-                            onLayout={onLayoutRootView}>
-                <ImageBackground source={require('./assets/background.png')} resizeMode="cover"
-                                 style={styles.rootScreen}
-                                 imageStyle={styles.backgroundImage}>
-                    <SafeAreaView style={styles.rootScreen}>
-                        {screen}
-                    </SafeAreaView>
-                </ImageBackground>
-            </LinearGradient>
+            <StatusBar style='light'/>
+            <FavoritesContextProvider>
+                <NavigationContainer>
+                    <Stack.Navigator initialRouteName="MealsCategories" screenOptions={{
+                        headerStyle: {backgroundColor: COLORS.BROWN},
+                        headerTintColor: COLORS.WHITE,
+                        contentStyle: {backgroundColor: COLORS.WALNUT},
+                    }}>
+                        <Stack.Screen name="All Categories" component={DrawerNavigator} options={{
+                            headerShown: false
+                        }}
+                        />
+                        <Stack.Screen name="MealsOverview" component={MealsOverviewScreen}
+                        />
+                        <Stack.Screen name="MealDetailsScreen" component={MealDetailsScreen}
+                                      options={{
+                                          title: "About the Meal"
+                                      }}
+                        />
+                    </Stack.Navigator>
+                </NavigationContainer>
+            </FavoritesContextProvider>
         </>
     );
 }
 
 const styles = StyleSheet.create({
-    rootScreen: {
+    rootContainer: {
         flex: 1,
-    },
-
-    backgroundImage: {
-        opacity: 0.25,
+        alignItems: "center",
+        justifyContent: "center"
     }
-});
+})
